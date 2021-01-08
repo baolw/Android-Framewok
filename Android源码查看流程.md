@@ -128,3 +128,42 @@ Android Source官方下载方法https://source.android.google.cn/setup/develop
 
 参考https://www.jianshu.com/p/3922ec229077
 
+关于目录位置选择
+
+https://www.vectoros.club/post/fe9083b4.html
+
+
+
+当下载了清华大学的镜像时，下载的是初始化包，tar，步骤如下：
+
+1. 电脑搜索winrar，邮件使用管理者打开(不用管理者权限会导致有些文件解压失败)
+
+2. winrar内打开下载的aosp-latest.tar
+
+3. 打开wsl ubuntu。首先可能没安装python（因为如果没装后面repo sync会说找不到python）
+
+4. wsl中安装`python，sudo apt install python3`
+
+5. 因为安装的是python3,此时输入python3才是python编辑模式，执行`sudo ln -s /usr/bin/python3.6 /usr/bin/python`更改名称
+
+6. 然后利用cd命令进入目标aosp文件夹，`cd /mnt/d/aosp/`，进入到有.repo的位置下
+
+7. 在开始同步之前，因为google为了验证身份，所以直接同步可能会出现错误：
+
+   error: .repo/manifests/: contains uncommitted changes
+
+8. 进入cd .repo/manifests 进入manifests目录:
+
+   ~~~
+   git config --global user.email "embed_support@melux.com"
+   git config --global user.name "melux"
+   
+   git stash
+   git clean -d -f
+   ~~~
+
+9. 如果以上步骤执行了，利用git status发现老是清除不了，执行:
+
+   `git config core.filemode false`
+
+10. 返回到工作目录下，执行`repo sync`
