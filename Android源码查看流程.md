@@ -152,7 +152,7 @@ https://www.vectoros.club/post/fe9083b4.html
 
    error: .repo/manifests/: contains uncommitted changes
 
-8. 进入cd .repo/manifests 进入manifests目录:
+8. 进入`cd .repo/manifests `进入manifests目录:
 
    ~~~
    git config --global user.email "embed_support@melux.com"
@@ -166,4 +166,74 @@ https://www.vectoros.club/post/fe9083b4.html
 
    `git config core.filemode false`
 
-10. 返回到工作目录下，执行`repo sync`
+10. 如果使用初始化包的方式，此时想同步指定版本的系统，跟普通init一致
+
+    `$ repo init -u https://aosp.tuna.tsinghua.edu.cn/platform/manifest -b android-5.0.2_r1`，-b后面的版本标记在以下链接中：
+
+    https://source.android.com/setup/start/build-numbers#source-code-tags-and-builds
+
+11. 返回到工作目录下，执行`repo sync`、
+
+解决错误：
+
+`RPC failed; curl 56 GnuTLS recv error (-54): Error in the pull function.`
+
+出现这个是因为配置缓存太小导致，运行如下：
+
+~~~
+git config --global http.postBuffer 20000000
+~~~
+
+12.在编译之前，需要执行repo init，而repo作为一个工具，执行init时会去网络更新自己，但是配置的是外网的，翻墙也没用。因此需要将该更新链接设置到国内的镜像
+
+1. 解决办法：
+
+   ~~~
+   repo init -u https://mirrors.tuna.tsinghua.edu.cn/git/AOSP/platform/manifest --repo-url=https://gerrit-googlesource.lug.ustc.edu.cn/git-repo
+   ~~~
+
+   在init后面加入repo的更新链接
+
+2. 更改配置：https://mirrors.tuna.tsinghua.edu.cn/help/git-repo/
+
+13.重要，防止每次都更新好久
+
+```
+ repo sync -l 仅checkout代码(这种方式比较快,不会fetch最新的远程仓库,也就是如果我下载的是20190101.tar,则最新的修改就到这天,之后至今天的修改,不同步.)
+# 如果不加 -l 选项, 则更新本地仓库为最新上百G了.
+```
+
+14.以上repo sync是在master分支上，master分支上根目录是没有build等其他文件的。因此之前就导致下一步编译时说找不到build下的文件
+
+~~~
+repo init -b android-8.1.0_r35
+或者
+repo init -u https://aosp.tuna.tsinghua.edu.cn/platform/manifest -b android-5.0.2_r1
+
+然后执行
+repo sync
+~~~
+
+因此需要切换到具体的版本分支才可以，
+
+https://source.android.com/setup/start/build-numbers#source-code-tags-and-builds
+
+版本选择一个init就可以出现额外的目录
+
+做完以上则可以开始编译源码
+
+## 编译源码
+
+1.安装jdk
+
+```
+sudo apt-get update
+sudo apt-get install openjdk-8-jdk
+```
+
+2.Ubuntu 18.04需要安装如下
+
+```
+sudo apt-get install git-core gnupg flex bison build-essential zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip fontconfig 
+```
+
