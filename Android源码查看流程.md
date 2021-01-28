@@ -146,7 +146,7 @@ https://www.vectoros.club/post/fe9083b4.html
 
 4. wsl中安装`python，sudo apt install python3`
 
-5. 因为安装的是python3,此时输入python3才是python编辑模式，执行`sudo ln -s /usr/bin/python3.6 /usr/bin/python`更改名称
+5. 因为安装的是python3,此时输入python3才是python编辑模式，先执行`whereis python3`,执行`sudo ln -s /usr/bin/python3 /usr/bin/python`更改名称
 
 6. 然后利用cd命令进入目标aosp文件夹，`cd /mnt/d/aosp/`，进入到有.repo的位置下
 
@@ -157,8 +157,8 @@ https://www.vectoros.club/post/fe9083b4.html
 8. 进入`cd .repo/manifests `进入manifests目录:
 
    ~~~
-   git config --global user.email "embed_support@melux.com"
-   git config --global user.name "melux"
+   git config --global user.email "baoleiwei@gmail.com"
+   git config --global user.name "baoleiwei"
    
    git stash
    git clean -d -f
@@ -188,7 +188,7 @@ rm -rf .repo/manifest*
 
 0. 如果使用初始化包的方式，此时想同步指定版本的系统，跟普通init一致
 
-   `$ repo init -u https://aosp.tuna.tsinghua.edu.cn/platform/manifest -b android-5.0.2_r1`，-b后面的版本标记在以下链接中：
+   `$ repo init -u git://mirrors.ustc.edu.cn/aosp/platform/manifest -b android-5.0.2_r1`，-b后面的版本标记在以下链接中：
 
    https://source.android.com/setup/start/build-numbers#source-code-tags-and-builds
 
@@ -232,7 +232,7 @@ git config --global http.postBuffer 1048576000
 ~~~
 repo init -b android-8.1.0_r35
 或者
-repo init -u https://aosp.tuna.tsinghua.edu.cn/platform/manifest -b android-5.0.2_r1
+repo init -u git://mirrors.ustc.edu.cn/aosp/platform/manifest -b android-5.0.2_r1
 
 然后执行
 repo sync
@@ -342,6 +342,16 @@ sudo apt install openssl
 
 
 
+###切换分支
+
+先重新init到新的分支，本地有代码改动执行这个
+
+~~~
+repo forall -c git reset --hard
+~~~
+
+然后再重新init一次，并且repo sync
+
 
 
 ## 编译源码
@@ -401,5 +411,13 @@ sudo apt-get install git-core gnupg flex bison build-essential zip curl zlib1g-d
 
 > 里面包含了编译，也可以跳过编译直接看源码的步骤，并且罗列了很多参考网页
 >
+> https://www.vectoros.club/post/fe9083b4.html 后续参考这个来做
+>
+> https://blog.csdn.net/bondw/article/details/109188576，也可以是这个
+>
 > https://www.jianshu.com/p/3922ec229077
+>
+> 错误借鉴：https://blog.csdn.net/forgot2015/article/details/54345020     
+>
+> 中科大镜像：https://lug.ustc.edu.cn/wiki/mirrors/help/aosp/
 
