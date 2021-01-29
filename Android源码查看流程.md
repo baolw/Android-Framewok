@@ -136,6 +136,8 @@ https://www.vectoros.club/post/fe9083b4.html
 
 当下载了清华大学的镜像时，下载的是初始化包，tar，步骤如下：
 
+0. 第一步，看最后 一定要先将下载解压的目录先设置成大小写区分。参考后面编译章节出现大小写区分错误的介绍
+
 1. 电脑搜索winrar，邮件使用管理者打开(不用管理者权限会导致有些文件解压失败)
 
 2. winrar内打开下载的aosp-latest.tar
@@ -144,7 +146,7 @@ https://www.vectoros.club/post/fe9083b4.html
 
 4. wsl中安装`python，sudo apt install python3`
 
-5. 因为安装的是python3,此时输入python3才是python编辑模式，执行`sudo ln -s /usr/bin/python3.6 /usr/bin/python`更改名称
+5. 因为安装的是python3,此时输入python3才是python编辑模式，先执行`whereis python3`,执行`sudo ln -s /usr/bin/python3 /usr/bin/python`更改名称
 
 6. 然后利用cd命令进入目标aosp文件夹，`cd /mnt/d/aosp/`，进入到有.repo的位置下
 
@@ -152,11 +154,11 @@ https://www.vectoros.club/post/fe9083b4.html
 
    error: .repo/manifests/: contains uncommitted changes
 
-8. 进入cd .repo/manifests 进入manifests目录:
+8. 进入`cd .repo/manifests `进入manifests目录:
 
    ~~~
-   git config --global user.email "embed_support@melux.com"
-   git config --global user.name "melux"
+   git config --global user.email "baoleiwei@gmail.com"
+   git config --global user.name "baoleiwei"
    
    git stash
    git clean -d -f
@@ -165,5 +167,257 @@ https://www.vectoros.club/post/fe9083b4.html
 9. 如果以上步骤执行了，利用git status发现老是清除不了，执行:
 
    `git config core.filemode false`
+   
+10. 解压出来后先到`.repo/manifests`下git status看下有没有未commit的文件，执行上述先清除掉，避免后续步骤出错
 
-10. 返回到工作目录下，执行`repo sync`
+### 重要
+
+如果init出现这个错误
+
+`Traceback (most recent call last): File`
+
+如果出现manifests文件夹下的文件git出问题
+
+执行
+
+~~~
+rm -rf .repo/manifest*
+~~~
+
+将相关文件删除，然后重新初始化就可以重新下载，就正常了
+
+0. 如果使用初始化包的方式，此时想同步指定版本的系统，跟普通init一致
+
+   `$ repo init -u git://mirrors.ustc.edu.cn/aosp/platform/manifest -b android-5.0.2_r1`，-b后面的版本标记在以下链接中：
+
+   https://source.android.com/setup/start/build-numbers#source-code-tags-and-builds
+
+1. 这一步骤之后，因为当时的初始化包都已经在.repo中，此时执行`repo sync -l`即可只检出本地代码出来，不需要网络同步，速度快很多。如果此时执行`repo sync`会导致要下载很多内容。
+
+2. 以上步骤结束之后，在设置的源码目录下就检出了整个aosp的源码了。即可进入编译环节
+
+3. 如果需要更新最新代码，执行`repo sync`、
+
+* 解决错误：
+
+`RPC failed; curl 56 GnuTLS recv error (-54): Error in the pull function.`
+
+出现这个是因为配置缓存太小导致，运行如下：
+
+~~~
+git config --global http.postBuffer 1048576000
+~~~
+
+* 在编译之前，需要执行repo init，而repo作为一个工具，执行init时会去网络更新自己，但是配置的是外网的，翻墙也没用。因此需要将该更新链接设置到国内的镜像
+
+1. 解决办法：
+
+   ~~~
+   repo init -u https://mirrors.tuna.tsinghua.edu.cn/git/AOSP/platform/manifest --repo-url=https://gerrit-googlesource.lug.ustc.edu.cn/git-repo
+   ~~~
+
+   在init后面加入repo的更新链接
+
+2. 更改配置：https://mirrors.tuna.tsinghua.edu.cn/help/git-repo/
+
+### .重要，防止每次都更新好久
+
+```
+ repo sync -l 仅checkout代码(这种方式比较快,不会fetch最新的远程仓库,也就是如果我下载的是20190101.tar,则最新的修改就到这天,之后至今天的修改,不同步.)
+# 如果不加 -l 选项, 则更新本地仓库为最新上百G了.
+```
+
+* 以上repo sync是在master分支上，master分支上根目录是没有build等其他文件的。因此之前就导致下一步编译时说找不到build下的文件
+
+~~~
+repo init -b android-8.1.0_r35
+或者
+repo init -u git://mirrors.ustc.edu.cn/aosp/platform/manifest -b android-5.0.2_r1
+
+然后执行
+repo sync
+~~~
+
+因此需要切换到具体的版本分支才可以，
+
+https://source.android.com/setup/start/build-numbers#source-code-tags-and-builds
+
+版本选择一个init就可以出现额外的目录
+
+做完以上则可以开始编译源码
+
+
+
+###自动下载脚本
+
+~~~
+#!/bin/bash
+repo sync  -j 8  
+while [ $? = 1 ]; do  
+        echo “======sync failed, re-sync again======”  
+        sleep 3  
+        repo sync  -j 8 
+done 
+~~~
+
+如果是同步个别项目，将上面的repo sync替换成
+
+~~~
+repo sync platform/development platform/frameworks/base platform/packages/apps/Calculator -j 8
+
+~~~
+
+然后可以使用windows Terminal，下拉打开安装的ubuntu运行，在aosp目录下
+
+~~~
+chmod a+x down.sh
+./down.sh
+~~~
+
+以上运行可能报错：
+
+参考[这里][https://blog.csdn.net/youzhouliu/article/details/79051516]，在aosp目录下，执行
+
+~~~
+sed -i "s/\r//" a.sh
+~~~
+
+然后再执行
+
+~~~
+./down.sh
+~~~
+
+即可开启repo sync。
+
+
+
+```
+sudo apt-get remove git
+sudo apt-get update
+sudo apt-get install git
+```
+
+```
+# Linux
+export GIT_TRACE_PACKET=1
+export GIT_TRACE=1
+export GIT_CURL_VERBOSE=1
+
+#Windows
+set GIT_TRACE_PACKET=1
+set GIT_TRACE=1
+set GIT_CURL_VERBOSE=1
+
+git config --global http.postBuffer 500M
+git config --global http.maxRequestBuffer 100M
+git config --global core.compression 0
+```
+
+
+
+```[
+sudo apt install openssl
+```
+
+[也许这个有效][https://devopscube.com/gnutls-handshake-failed-aws-codecommit/]
+
+
+
+
+
+### 错误合集
+
+1. 如果Repo sync的时候出错，error: RPC failed; curl 56 GnuTLS recv error (-9): A TLS packet with unexpected length was received.
+    解决方法是：
+    `apt install gnutls-bin`
+
+   或者参考[这里][https://gitee.com/Fastdriod/aosp-mirror-creator]
+
+   或者更新
+
+   ```
+   sudo apt install openssl
+   ```
+
+
+
+###切换分支
+
+先重新init到新的分支，本地有代码改动执行这个
+
+~~~
+repo forall -c git reset --hard
+~~~
+
+然后再重新init一次，并且repo sync
+
+
+
+## 编译源码
+
+1.安装jdk
+
+```
+sudo apt-get update
+sudo apt-get install openjdk-8-jdk
+```
+
+2.Ubuntu 18.04需要安装如下
+
+```
+sudo apt-get install git-core gnupg flex bison build-essential zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip fontconfig 
+```
+
+3. 开始编译执行
+
+   ~~~
+   source build/envsetup.sh
+   lunch 
+   选择一个版本
+   
+   m
+   ~~~
+
+   # 针对源码工作目录，开启大小写敏感（重要）
+
+   - Windows系统中文件和文件夹默认是不区分大小写的，但是编译Android源码，需要区分大小的系统。
+
+   - 为了给WSL提供更好的支持，微软从Windows10 18917更新开始，为NTFS文件系统新增了一个`SetCaseSensitiveInfo`标志。可以有选择的根据所需的文件夹启用此flag，启用之后，NTFS文件系统就会针对**该文件夹及其子文件**视为区分大小写。
+
+   - 此功能不仅可以在WSL中起作用，也可以在Windows下起作用。
+
+   - ## 开启方式
+
+     - 以管理员身份打开命令提示符或者Powershell
+
+     - 执行以下命令开启
+
+       ```
+       fsutil file SetCaseSensitiveInfo G:\source\aosp enable
+       fsutil file SetCaseSensitiveInfo G:\source\CCACHE enable  这个可能不需要
+       ```
+
+     - 执行以下命令关闭
+
+       ```
+       fsutil file SetCaseSensitiveInfo G:\source\aosp disable
+       fsutil file SetCaseSensitiveInfo G:\source\CCACHE disable  这个可能不需要
+       ```
+
+     需要注意的是，这个操作不会对此目录中已有的文件生效，只有新写入的文件才会继承这个属性。所以对于目录中已有的文件，需要把文件剪切到其它目录，然后再复制回来。（同盘符下的剪切不是写入，所以后面的操作是复制。
+
+## 参考链接：
+
+> 里面包含了编译，也可以跳过编译直接看源码的步骤，并且罗列了很多参考网页
+>
+> https://www.vectoros.club/post/fe9083b4.html 后续参考这个来做
+>
+> https://blog.csdn.net/bondw/article/details/109188576，也可以是这个
+>
+> https://www.jianshu.com/p/3922ec229077
+>
+> 错误借鉴：https://blog.csdn.net/forgot2015/article/details/54345020     
+>
+> 中科大镜像：https://lug.ustc.edu.cn/wiki/mirrors/help/aosp/
+
